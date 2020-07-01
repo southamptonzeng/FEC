@@ -1,0 +1,24 @@
+pkg load communications
+m = 4
+n = 15
+k = 11
+primpoly = 19
+fcr = n
+prim = 1
+crs = exp(gf(mod(fcr*prim:prim:(fcr+n-k-1)*prim, n), m, primpoly))
+msg = gf([1:11], m, primpoly)
+enc = rsenc(msg, n, k, fcr, prim)
+syn = polyval(enc, crs)
+dec = rsdec(enc, n, k, fcr, prim)
+enc(1) = 0
+syn = polyval(enc, crs)
+dec = rsdec(enc, n, k, fcr, prim)
+enc(2) = 0
+syn = polyval(enc, crs)
+dec = rsdec(enc, n, k, fcr, prim)
+enc(3) = 0
+syn = polyval(enc, crs)
+dec = rsdec(enc, n, k, fcr, prim)
+enc(4) = 0
+syn = polyval(enc, crs)
+dec = rsdec(enc, n, k, fcr, prim)

@@ -1,0 +1,6 @@
+.*.swp
+testbench
+benchmark
+tables_generator
+galois_field_tables.hh
+*.pdf
