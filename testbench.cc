@@ -184,15 +184,26 @@ void test_bch(std::string name, BoseChaudhuriHocquenghem<NR, FCR, K, GF::Types<M
 		bch.encode(code);
 		bool error = false;
 		for (int i = 0; i < bch.N; ++i)
-			error |= code[i] != target[i];
+			error |= code[i] != target[i]; //对比自己编好的码和目标之间的差距
+	    std::cout << "输出编好的码=";
+		for (int i = 0; i < bch.N; i++) {
+			printf("%d ", code[i]);
+		}
+		std::cout << std::endl;
 		if (error)
 			std::cout << "encoder error!" << std::endl;
 		assert(!error);
 		//print_table(code + K, "parity", bch.NP);
-		error = bch.decode(code);
+		error = bch.decode(code); //把编好的码重新再解码，默认是没有擦除的
+		std::cout<< "解码时的错误=" << error << std::endl;
 		if (error)
 			std::cout << "decoder error!" << std::endl;
 		assert(!error);
+		std::cout << "输出解好的码=";
+		for (int i = 0; i < bch.N; i++) {
+			printf("%d ", code[i]);
+		}
+		std::cout << std::endl;
 		int pos = 0, cap = 0, corrupt = 0, erasures_count = 0;
 		TYPE erasures[NR];
 		// need one root per erasure
@@ -340,6 +351,7 @@ int main()
 		uint8_t target[15] = {1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1};
 		test_bch("NASA INTRO BCH(15, 11) T=1", bch, code, target, data);
 	}
+	
 	if (1) {
 		ReedSolomon<4, 0, GF::Types<4, 0b10011, uint8_t>> rs;
 		uint8_t code[15] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
