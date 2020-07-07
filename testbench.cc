@@ -337,21 +337,12 @@ int main()
 	std::uniform_int_distribution<uint8_t> distribution(0, 255);
 	std::vector<uint8_t> data(65471*16);
 	std::generate(data.begin(), data.end(), std::bind(distribution, generator));
-	/*
 	if (1) {
 		BoseChaudhuriHocquenghem<6, 1, 5, GF::Types<4, 0b10011, uint8_t>> bch({0b10011, 0b11111, 0b00111});
 		uint8_t code[15] = { 1, 1, 0, 0, 1 };
 		uint8_t target[15] = { 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0 };
 		test_bch("NASA INTRO BCH(15, 5) T=3", bch, code, target, data);
 	}
-	*/
-	if (1) {
-		BoseChaudhuriHocquenghem<2, 1, 11, GF::Types<4, 0b10011, uint8_t>> bch({0b10011});
-		uint8_t code[15] = {1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1};
-		uint8_t target[15] = {1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1};
-		test_bch("NASA INTRO BCH(15, 11) T=1", bch, code, target, data);
-	}
-	
 	if (1) {
 		ReedSolomon<4, 0, GF::Types<4, 0b10011, uint8_t>> rs;
 		uint8_t code[15] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
@@ -389,4 +380,3 @@ int main()
 		test_rs("FUN RS(65535, 65471) T=32", rs, code, target, data);
 	}
 }
-
