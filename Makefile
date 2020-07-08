@@ -1,5 +1,5 @@
 
-CXXFLAGS = -std=c++11 -W -Wall -O3 -march=native
+CXXFLAGS = -std=c++11 -W -Wall -O1
 CXX = g++
 
 testbench: MyTest.cc reed_solomon.hh bose_chaudhuri_hocquenghem.hh berlekamp_massey.hh chien.hh forney.hh find_locations.hh correction.hh galois_field.hh galois_field_tables.hh
