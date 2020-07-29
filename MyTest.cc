@@ -8,55 +8,52 @@
 #include "galois_field.hh"
 #include "reed_solomon.hh"
 #include "bose_chaudhuri_hocquenghem.hh"
+#include <bitset>
+#include <string.h>
+
+#define M 50
+#define IPSIZE 15
+#define HALF_WORD   uint16_t
+#define WORD        uint32_t
+
+using namespace std;
+
+struct ClientInfo{
+    char headName[M];       
+    char name[M];            
+    int num;                
+    char ip[IPSIZE];
+    char data[M];
+    char time[M];
+};
 int main()
 {
+    ClientInfo* aaa = (ClientInfo*)malloc(sizeof(ClientInfo));
+    strcpy(aaa->headName,"aaaaaaaaaaaaa");
+    strcpy(aaa->name,"bbbbbbbbb");
+    aaa->num = 10;
+    strcpy(aaa->ip,"ccccccc");
+    strcpy(aaa->data,"ddddddddd");
+    strcpy(aaa->time,"eeeeeeeee");
 
+    int size = sizeof(ClientInfo);
+    char buf[size];
+    cout << "ClientInfo结构体大小：" << size * 8 << " bits" << endl; //理论上来说二期的CDatapackage结构体大小也固定，
+                                                                     //一期包的大小为4448 bits，加上扰码有多大？最好大于5140 bits
+                                                                     //这样我只需要切分了
 
-    /*
-	if (1) {
-		BoseChaudhuriHocquenghem<2, 1, 11, GF::Types<4, 0b10011, uint8_t>> bch({0b10011});
-		uint8_t code[15] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		std::cout << "NASA INTRO BCH(15, 11) T=1" << std::endl;
-        bch.encode(code);
-        code[0] = 1;
-        bch.decode(code);
-       std::cout << "纠正错误之后=";
-       for (int i = 0; i < bch.N; i++) {
-			printf("%d ", code[i]);
-		}
-        std::cout << std::endl;
-	}
+    memcpy(buf,aaa,sizeof(*aaa)); //把结构体aaa的内存拷贝给buf
 
-    if (1) {
-		ReedSolomon<4, 0, GF::Types<4, 0b10011, uint8_t>> rs;
-		uint8_t code[15] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-		std::cout << "BBC WHP031 RS(14, 10) T=2" << std::endl;
-        rs.encode(code);
-        rs.decode(code); //把编好的码重新再解码，默认是没有擦除的
-        code[0] = 9;
-        code[1] = 10;
-        std::cout << "纠正错误之前=";
-        for (int i = 0; i < rs.N; i++) {
-			printf("%d ", code[i]);
-		}
-        std::cout << std::endl;
-        rs.decode(code);
-        std::cout << "纠正错误之后=";
-        for (int i = 0; i < rs.N; i++) {
-			printf("%d ", code[i]);
-		}
-        std::cout << std::endl;
-    }
-    */
-   /*测试RS短截码（204，188），由RS（255，223）截取*/
-   if (1) {
-		ReedSolomon<32, 1, GF::Types<8, 0b100011101, uint8_t>> rs;
+    //TODO
+    //对buf进行编码解码，用RS短截码(204,188)，信息为长度188 * 8 = 1504 bits，结构体大了要切，结构体小了要添
+        ReedSolomon<32, 1, GF::Types<8, 0b100011101, uint8_t>> rs;
         uint8_t code[255];
         std::cout << "DVD RS(204, 188) T=16 由(255,223)截取而来" << std::endl;
+
         for (int i=0; i < 255; i++) //信息比特只有188位长，189到223用0填充，224到255只是保留长度
         {
             if (i < 188)
-                code[i] = i;
+                code[i] = buf[i];
             else
                 code[i] = 0;
         }
@@ -94,6 +91,16 @@ int main()
 			printf("%d ", code[i]);
 		}
         std::cout << std::endl;
-    }
+
+    
+    struct ClientInfo bbb;
+    memcpy(&bbb,buf,sizeof(bbb)); //把buf的内存拷贝给bbb
+
+    cout << bbb.headName << endl;
+    cout << bbb.name << endl;
+    cout << bbb.num << endl;
+    cout << bbb.ip << endl;
+    cout << bbb.data << endl;
+    cout << bbb.time << endl;
     return 0;
 }
