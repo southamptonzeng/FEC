@@ -10,8 +10,6 @@
 #include "bose_chaudhuri_hocquenghem.hh"
 int main()
 {
-
-
     /*
 	if (1) {
 		BoseChaudhuriHocquenghem<2, 1, 11, GF::Types<4, 0b10011, uint8_t>> bch({0b10011});
