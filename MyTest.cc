@@ -10,6 +10,11 @@
 #include "bose_chaudhuri_hocquenghem.hh"
 #include <stdio.h>
 #include <string.h>
+#include <list>
+struct Block {
+    char trans[544 * 2];
+};
+std::list<Block> ls;
 struct CDataPacket
 {
     unsigned int TLPLength1:4;//TLP长度[3:0]，4bit
@@ -41,17 +46,17 @@ struct CDataPacket
 
     char DataPayload[556-44];//数据负载，大小在0~1024DW，按需求此处只模拟0~512Byte大小
 };
-int EnCode(CDataPacket* dp) {
+unsigned int enCode(CDataPacket& dp) {
     //开辟一个数组buf
     unsigned int size = sizeof(CDataPacket);
     std::cout << "包的大小为：" << size << std::endl; //目前包的大小为556字节，buf长度 > code长度
     uint8_t buf[size];
-    memcpy(buf,dp,sizeof(CDataPacket));
-    if (1) {//是10bit编码（544，514），一个包两个编码搞定。（1023，993）
-        unsigned int times = size / 514; //编码几次
-        //unsigned int rest = size % 514;
+    memcpy(buf,&dp,sizeof(CDataPacket));
+    if (1) {//是10bit编码（544，514），一个包两个编码搞定。（1023，993），0-513，514-543，0-992，993-1022
+        unsigned int times = size / 514; //编码次数还要加1
+        std::cout << "编码次数：" << times + 1 << std::endl;
         unsigned int buf_position = 0;
-        ReedSolomon<30, 0, GF::Types<10, 0b10000001001, uint16_t>> rs; //TODO参数有问题
+        ReedSolomon<30, 0, GF::Types<10, 0b10000001001, uint16_t>> rs;
         for(unsigned int temp = 0; temp < times + 1; temp++)
         {
             if (temp < times) { //填充完code
@@ -63,13 +68,15 @@ int EnCode(CDataPacket* dp) {
                 for (unsigned int i = 0; i < rs.N; i++) {
 			        printf("%d ", code[i]);
 		        }
+                std::cout << std::endl;
                 rs.encode(code); //编码函数
                 std::cout << "编码完成后=";
                 for (unsigned int i = 0; i < rs.N; i++) {
 			        printf("%d ", code[i]);
 		        }
+                std::cout << std::endl;
                 uint16_t cut[544]; //截取之后的数组
-                for (unsigned int i = 0, j = 994; i < 544; i++) {
+                for (unsigned int i = 0, j = 993; i < 544; i++) {
                     if (i < 514)
                         cut[i] = code[i]; //0-513
                     else {
@@ -77,9 +84,11 @@ int EnCode(CDataPacket* dp) {
                         j++;
                     }
                 }
-                char trans[544 * 2] = {0};
-                memcpy(trans, cut, 544 * 2);
+                Block bl = {0};
+                //char trans[544 * 2] = {0};
+                memcpy(bl.trans, cut, 544 * 2);
                 //DPSeg(trans);
+                ls.push_back(bl); //传入一个引用
             }
             else { //不能填充完code，粗暴补0
                 uint16_t code[1023] = {0};
@@ -90,13 +99,15 @@ int EnCode(CDataPacket* dp) {
                 for (unsigned int i = 0; i < rs.N; i++) {
 			        printf("%d ", code[i]);
 		        }
+                std::cout << std::endl;
                 rs.encode(code); //编码函数
                 std::cout << "编码完成后=";
                 for (unsigned int i = 0; i < rs.N; i++) {
 			        printf("%d ", code[i]);
 		        }
+                std::cout << std::endl;
                 uint16_t cut[544]; //截取之后的数组
-                for (unsigned int i = 0, j = 994; i < 544; i++) {
+                for (unsigned int i = 0, j = 993; i < 544; i++) {
                     if (i < 514)
                         cut[i] = code[i]; //0-513
                     else {
@@ -104,19 +115,57 @@ int EnCode(CDataPacket* dp) {
                         j++;
                     }
                 }
-                char trans[544 * 2] = {0};
-                memcpy(trans, cut, 544 * 2);
+                Block bl = {0};
+                //char trans[544 * 2] = {0};
+                memcpy(bl.trans, cut, 544 * 2);
                 //DPSeg(trans);
+                ls.push_back(bl);
             }    
 
         }
-        
+        return times + 1;
+    }
+}
+
+unsigned int deCode(unsigned int times, CDataPacket& packet) { //比enCode times多一次
+    unsigned int size = sizeof(CDataPacket);
+    uint8_t buf[size];
+    unsigned int buf_position = 0;
+    if (1) {//是10bit编码（544，514），一个包两个编码搞定。（1023，993），0-513，514-543，0-992，993-1022
+        ReedSolomon<30, 0, GF::Types<10, 0b10000001001, uint16_t>> rs;
+        for(unsigned int i = 0; i < times; i++) {
+            uint16_t cut[544]; //截取之后的数组
+            Block bl = ls.front(); //返回一个引用TODO
+            memcpy(cut, bl.trans, 544 * 2);
+            uint16_t code[1023];
+            for (unsigned int j = 0, k = 993; j < 514; j++) { //cut扩充成code
+                if (j < 514) {
+                    code[j] = cut[j];
+                }
+                else {
+                    code[j] = cut[k];
+                    k++;
+                }
+
+            }
+            rs.decode(code); //纠错解码
+            for(unsigned int i = 0; i < 514; i++, buf_position++) { //code赋给buf
+                buf[buf_position] = code[i];
+            }
+            ls.pop_front();  
+        }
+        memcpy(&packet, buf, sizeof(CDataPacket));
+        return 0;
     }
 }
 int main()
 {
-    struct CDataPacket packet;
-    //packet.DataPayload = {1, 2, 3};
-   
+    CDataPacket packet;
+    packet.DataPayload[0] = 'a';
+    packet.DataPayload[1] = 'b';
+    packet.DataPayload[2] = 'c';
+    CDataPacket packet2;
+    deCode(enCode(packet), packet2);
+    std::cout << packet2.DataPayload[2] << std::endl; 
     return 0;
 }
