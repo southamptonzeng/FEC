@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <list>
+
+using namespace std;
 struct Block {
     char trans[544 * 2];
 };
@@ -50,7 +52,7 @@ unsigned int enCode(CDataPacket& dp) {
     //开辟一个数组buf
     unsigned int size = sizeof(CDataPacket);
     std::cout << "包的大小为：" << size << std::endl; //目前包的大小为556字节，buf长度 > code长度
-    uint8_t buf[size];
+    uint8_t buf[size] = {0};
     memcpy(buf,&dp,sizeof(CDataPacket));
     if (1) {//是10bit编码（544，514），一个包两个编码搞定。（1023，993），0-513，514-543，0-992，993-1022
         unsigned int times = size / 514; //编码次数还要加1
@@ -75,7 +77,7 @@ unsigned int enCode(CDataPacket& dp) {
 			        printf("%d ", code[i]);
 		        }
                 std::cout << std::endl;
-                uint16_t cut[544]; //截取之后的数组
+                uint16_t cut[544] = {0}; //截取之后的数组
                 for (unsigned int i = 0, j = 993; i < 544; i++) {
                     if (i < 514)
                         cut[i] = code[i]; //0-513
@@ -129,32 +131,46 @@ unsigned int enCode(CDataPacket& dp) {
 
 unsigned int deCode(unsigned int times, CDataPacket& packet) { //比enCode times多一次
     unsigned int size = sizeof(CDataPacket);
-    uint8_t buf[size];
+    uint8_t buf[size] = {0};
     unsigned int buf_position = 0;
+    std::cout << "解码次数：" << times << std::endl;
     if (1) {//是10bit编码（544，514），一个包两个编码搞定。（1023，993），0-513，514-543，0-992，993-1022
         ReedSolomon<30, 0, GF::Types<10, 0b10000001001, uint16_t>> rs;
         for(unsigned int i = 0; i < times; i++) {
-            uint16_t cut[544]; //截取之后的数组
-            Block bl = ls.front(); //返回一个引用TODO
+            uint16_t cut[544] = {0}; //截取之后的数组
+            //std::cout << ls.size() << std::endl;
+            std::cout << "计数值i = " << i << std::endl;
+            Block bl = ls.front(); //返回一个引用，参见c++ primer
             memcpy(cut, bl.trans, 544 * 2);
-            uint16_t code[1023];
-            for (unsigned int j = 0, k = 993; j < 514; j++) { //cut扩充成code
+            uint16_t code[1023] = {0};
+            for (unsigned int j = 0, k = 993; j < 544; j++) { //cut扩充成code
                 if (j < 514) {
-                    code[j] = cut[j];
+                    code[j] = cut[j]; //0-513
                 }
                 else {
-                    code[j] = cut[k];
+                    code[k] = cut[j]; //514-543
                     k++;
                 }
 
             }
+            std::cout << "扩充完成后=";
+            for (unsigned int i = 0; i < rs.N; i++) {
+			        printf("%d ", code[i]);
+		    }
+            std::cout << std::endl;
             rs.decode(code); //纠错解码
-            for(unsigned int i = 0; i < 514; i++, buf_position++) { //code赋给buf
+            std::cout << "纠错解码完成后=";
+            for (unsigned int i = 0; i < rs.N; i++) {
+			        printf("%d ", code[i]);
+		    }
+            std::cout << std::endl;            
+            for(unsigned int i = 0; i < 514 && buf_position < size; i++, buf_position++) { //code赋给buf
                 buf[buf_position] = code[i];
             }
             ls.pop_front();  
         }
         memcpy(&packet, buf, sizeof(CDataPacket));
+        std::cout << "解码完成" << std::endl;
         return 0;
     }
 }
