@@ -1,4 +1,7 @@
-This code is forked from xdsopl in github, https://github.com/xdsopl/FEC.
+This code is forked from xdsopl's repository on GitHub: https://github.com/xdsopl/FEC. 
+I made changes to `tables_generator.cc` to support other types of BCH and RS codes. 
+Many thanks to xdsopl for kindly sharing the original code.
+------------------------------------------------------------------------------------------
 
 FEC - Forward error correction
 Written in 2017 by <Ahmet Inan> <xdsopl@gmail.com>
